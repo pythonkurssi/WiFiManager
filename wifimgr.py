@@ -2,6 +2,7 @@ import network
 import socket
 import ure
 import time
+import os
 
 ap_ssid = "WifiManager"
 ap_password = "tayfunulu"
@@ -48,11 +49,13 @@ def get_connection():
         wlan_sta.active(True)
         networks = wlan_sta.scan()
 
-        AUTHMODE = {0: "open", 1: "WEP", 2: "WPA-PSK", 3: "WPA2-PSK", 4: "WPA/WPA2-PSK"}
+        AUTHMODE = {0: "open", 1: "WEP", 2: "WPA-PSK",
+                    3: "WPA2-PSK", 4: "WPA/WPA2-PSK"}
         for ssid, bssid, channel, rssi, authmode, hidden in sorted(networks, key=lambda x: x[3], reverse=True):
             ssid = ssid.decode('utf-8')
             encrypted = authmode > 0
-            print("ssid: %s chan: %d rssi: %d authmode: %s" % (ssid, channel, rssi, AUTHMODE.get(authmode, '?')))
+            print("ssid: %s chan: %d rssi: %d authmode: %s" %
+                  (ssid, channel, rssi, AUTHMODE.get(authmode, '?')))
             if encrypted:
                 if ssid in profiles:
                     password = profiles[ssid]
@@ -60,7 +63,7 @@ def get_connection():
                 else:
                     print("skipping unknown encrypted network")
             elif connect_to_open_wifis:
-                    connected = do_connect(ssid, None)
+                connected = do_connect(ssid, None)
             if connected:
                 break
 
@@ -75,6 +78,9 @@ def get_connection():
 
 
 def read_profiles():
+    if NETWORK_PROFILES not in os.listdir():
+        return {}
+
     with open(NETWORK_PROFILES) as f:
         lines = f.readlines()
     profiles = {}
@@ -111,11 +117,11 @@ def do_connect(ssid, password):
     return connected
 
 
-def send_header(client, status_code=200, content_length=None ):
+def send_header(client, status_code=200, content_length=None):
     client.sendall("HTTP/1.0 {} OK\r\n".format(status_code))
     client.sendall("Content-Type: text/html\r\n")
     if content_length is not None:
-      client.sendall("Content-Length: {}\r\n".format(content_length))
+        client.sendall("Content-Length: {}\r\n".format(content_length))
     client.sendall("\r\n")
 
 
@@ -280,7 +286,8 @@ def start(port=80):
     server_socket.bind(addr)
     server_socket.listen(1)
 
-    print('Connect to WiFi ssid ' + ap_ssid + ', default password: ' + ap_password)
+    print('Connect to WiFi ssid ' + ap_ssid +
+          ', default password: ' + ap_password)
     print('and access the ESP via your favorite web browser at 192.168.4.1.')
     print('Listening on:', addr)
 
@@ -306,8 +313,10 @@ def start(port=80):
                 continue
 
             if "POST" in request and "Content-Length: " in request:
-                content_length = int(ure.search("Content-Length: ([0-9]+)?", bytes(request)).group(1))
-                content = bytearray(request[bytes(request).index(b"\r\n\r\n") + 4:])
+                content_length = int(ure.search(
+                    "Content-Length: ([0-9]+)?", bytes(request)).group(1))
+                content = bytearray(
+                    request[bytes(request).index(b"\r\n\r\n") + 4:])
                 content_length_remaining = content_length - len(content)
 
                 while content_length_remaining > 0:
@@ -321,9 +330,11 @@ def start(port=80):
 
             # version 1.9 compatibility
             try:
-                url = ure.search("(?:GET|POST) /(.*?)(?:\\?.*?)? HTTP", request).group(1).decode("utf-8").rstrip("/")
+                url = ure.search("(?:GET|POST) /(.*?)(?:\\?.*?)? HTTP",
+                                 request).group(1).decode("utf-8").rstrip("/")
             except Exception:
-                url = ure.search("(?:GET|POST) /(.*?)(?:\\?.*?)? HTTP", request).group(1).rstrip("/")
+                url = ure.search(
+                    "(?:GET|POST) /(.*?)(?:\\?.*?)? HTTP", request).group(1).rstrip("/")
             print("URL is {}".format(url))
 
             if url == "":
