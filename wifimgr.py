@@ -113,13 +113,14 @@ def do_connect(ssid, password):
     if connected:
         print('\nConnected. Network config: ', wlan_sta.ifconfig())
     else:
+        wlan_sta.disconnect()  # fixes issue "STA is connecting, scan are not allowed!"
         print('\nFailed. Not Connected to: ' + ssid)
     return connected
 
 
 def send_header(client, status_code=200, content_length=None):
     client.sendall("HTTP/1.0 {} OK\r\n".format(status_code))
-    client.sendall("Content-Type: text/html\r\n")
+    client.sendall("Content-Type: text/html; charset=UTF-8\r\n")
     if content_length is not None:
         client.sendall("Content-Length: {}\r\n".format(content_length))
     client.sendall("\r\n")
@@ -138,49 +139,49 @@ def handle_root(client):
     ssids = sorted(ssid.decode('utf-8') for ssid, *_ in wlan_sta.scan())
     send_header(client)
     client.sendall("""\
-        <html>
-            <h1 style="color: #5e9ca0; text-align: center;">
-                <span style="color: #ff0000;">
-                    Wi-Fi Client Setup
-                </span>
-            </h1>
-            <form action="configure" method="post">
-                <table style="margin-left: auto; margin-right: auto;">
-                    <tbody>
-    """)
-    while len(ssids):
-        ssid = ssids.pop(0)
-        client.sendall("""\
-                        <tr>
-                            <td colspan="2">
-                                <input type="radio" name="ssid" value="{0}" />{0}
-                            </td>
-                        </tr>
-        """.format(ssid))
-    client.sendall("""\
-                        <tr>
-                            <td>Password:</td>
-                            <td><input name="password" type="password" /></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p style="text-align: center;">
+        <html><head><style>
+            html {
+                background-color: #eee;
+            }
+            body { 
+                font-family: sans-serif;
+                max-width: 500px;
+                margin: 50px auto;
+                font-size: 0.8rem;
+            }
+            #container {
+                border: outset silver 1px;
+                background-color: white;
+                padding: 50px;
+                margin: 0 0 50px 0;
+                color: #000;
+                font-size: 1rem;
+            }
+            h1 {
+                margin-top: 0;
+                text-align: center;
+            }
+            </style></head>
+            <body><div id="container">
+            <h1>Wi-Fi setup 📶</h1>
+            <form action="configure" method="post">""")
+    for ssid in ssids:
+        client.sendall(
+            '<div><label><input type="radio" name="ssid" value="' + ssid + '" />' + ssid + '</label></div>')
+
+    client.sendall("""
+                <p>
+                    Password:
+                    <input name="password" type="password" />
                     <input type="submit" value="Submit" />
                 </p>
             </form>
-            <p>&nbsp;</p>
-            <hr />
-            <h5>
-                <span style="color: #ff0000;">
-                    Your ssid and password information will be saved into the
-                    "%(filename)s" file in your ESP module for future usage.
-                    Be careful about security!
-                </span>
-            </h5>
-            <hr />
-            <h2 style="color: #2e6c80;">
-                Some useful infos:
-            </h2>
+            </div>
+            <p>
+                Your ssid and password information will be saved into the
+                """ + NETWORK_PROFILES + """ file in your ESP module for future usage.
+                Be careful about security!
+            </p>
             <ul>
                 <li>
                     Original code from <a href="https://github.com/cpopp/MicroPythonSamples"
@@ -191,8 +192,8 @@ def handle_root(client):
                         target="_blank" rel="noopener">tayfunulu/WiFiManager</a>.
                 </li>
             </ul>
-        </html>
-    """ % dict(filename=NETWORK_PROFILES))
+        </body></html>
+    """)
     client.close()
 
 
@@ -218,10 +219,8 @@ def handle_configure(client, content):
             <html>
                 <center>
                     <br><br>
-                    <h1 style="color: #5e9ca0; text-align: center;">
-                        <span style="color: #ff0000;">
-                            ESP successfully connected to WiFi network %(ssid)s.
-                        </span>
+                    <h1>
+                        ESP successfully connected to WiFi network %(ssid)s.
                     </h1>
                     <br><br>
                 </center>
@@ -242,10 +241,9 @@ def handle_configure(client, content):
         response = """\
             <html>
                 <center>
-                    <h1 style="color: #5e9ca0; text-align: center;">
-                        <span style="color: #ff0000;">
-                            ESP could not connect to WiFi network %(ssid)s.
-                        </span>
+                    <br><br>
+                    <h1>
+                        ESP could not connect to WiFi network %(ssid)s.
                     </h1>
                     <br><br>
                     <form>
