@@ -11,6 +11,10 @@ Tested : 1.8 and 1.9.3
 - Save wifi password in "wifi.dat" (csv format) 
 - Easy to apply 
 
+<b>Web interface:</b>
+
+![Web interface](ui.jpg)
+
 <b>Usage:</b>
 
 Upload main.py and wifimgr.py to ESP. 
@@ -24,4 +28,4 @@ Write your code into main.py or import it from main.py.
 
 ![alt text](https://github.com/tayfunulu/WiFiManager/blob/master/WiFi_Manager.png)
 
-**web server based on code of CPOPP - https://github.com/cpopp/MicroPythonSamples
+Web server based on code of CPOPP - https://github.com/cpopp/MicroPythonSamples
